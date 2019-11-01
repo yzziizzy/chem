@@ -6,12 +6,6 @@
 
 
 
-void Moly::AddBond(Atom* target, Bond* bond) {
-	
-	
-	
-}
-
 
 
 

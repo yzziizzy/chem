@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <string>
+#include <vector>
 #include <iostream>
 
 using namespace std;
@@ -17,20 +18,24 @@ public:
 	void Load(string* path);
 	
 	void NextLine();
-	char* 
+	
+	vector<string>* header;
+	vector<vector<string>*> lines;
+	
 	
 protected:
 	char* cursor;
 	int currentLine;
 	int currentColumn;
 	
-	char* buffer;
-}
+	vector<string>* grabLine();
+	
+};
 
 
 void CSVParser::Load(string* path) {
 	// read the file
-	FILE* f = fopen(path.c_str(), "rb");
+	FILE* f = fopen(path->c_str(), "rb");
 	
 	fseek(f, 0, SEEK_END);
 	int sz = ftell(f);
@@ -48,61 +53,87 @@ void CSVParser::Load(string* path) {
 	cursor = src;
 	currentLine = 0;
 	currentColumn = 0;
-}
-
-// returns NULL for eol/eof, cursor otherwise
-char* CSVParser::checkEOL() {
-	char* s = cursor;
-	while(*s) {
-		if(*s == '\r' || *s == '\n') return NULL;
-		if(*s == ',' ) return cursor;
-		s++;
-	}
-	return NULL;
-}
-
-
-char* CSVParser::findEOC() {
-	char* s = cursor;
-	while(*s) {
-		if(*s == '\r' || *s == '\n') return s - 1;
-		if(*s == ',' ) return  s - 1;
-		s++;
-	}
-	return s - 1;
-}
-
-// returns 0 for normal, 1 for end of line (does not move to next line)
-char* CSVParser::NextColumn() {
-	while(1) {
-		
-		if(*cursor == ',') {
-			cursor++;
-			char* e = findEOC();
-			
-			
-		} 
-		else if(*cursor == '"') {
-			cursor++;
-			char* e = findEOC();
-			
-			
-		} 
-		
-	}
-}
-
-void CSVParser::NextLine() {
 	
+	grabLine();
+	
+	while(*cursor != '\0') lines.push_back(grabLine());
+	
+	delete src;
 }
 
 
+
+vector<string>* CSVParser::grabLine() {
+	vector<string>* cols = new vector<string>;
+	
+	char* s = cursor;
+	char* e = s;
+	
+	int cindex = 0;
+	
+	while(1) { // columns
+		
+		if(*s == '"') {
+			s++;
+			while(1) {
+				e = strchr(s, '"');
+				if(*e != '"') {
+					cout << "unexpected end of csv file\n";
+					exit(1);
+				}
+				
+				if(*(e + 1) == '"') { // quoted quotes
+					e += 2;
+					continue;
+				}
+				
+				break;
+			}
+			
+			// e is at the end now; extract the string 
+			// TODO: unescape internal quotes
+			cols->push_back(string(s, e-s));
+		}
+		else {
+			e = strpbrk(e, ",\r\n");
+			
+			// e is at the end
+			cols->push_back(string(s, e-s));
+		}
+		
+		if(*e == '\r') break;
+		if(*e == '\n') break;
+		if(*e == '\0') break;
+	
+		e++;
+		s = e;
+		
+
+
+	}
+	
+	s = e;
+	s++; // BUG: may need better handling for \0 and \r
+	cursor = s;
+	
+	for(string ss : *cols) {
+		cout << ss << endl;
+	} 
+	
+	return cols;
+}
 
 
 Element g_elements[120];
 
 
 void parse_chem_csv(string path) {
+	
+	CSVParser csv;
+	
+	csv.Load(&path);
+	
+	return;
 	
 	// read the file
 	FILE* f = fopen(path.c_str(), "rb");
