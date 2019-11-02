@@ -4,10 +4,11 @@
 
 
 
-
-
-class SmilesAtom {
+// used to cache data while parsing a smiles string
+class SmilesMeta {
 public:
+	Atom* atom;
+	
 	int number;
 	int isotope;
 	int attachedHydrogens;
@@ -15,10 +16,7 @@ public:
 	
 	bool aromaticShorthand;
 	
-	SmilesAtom() {};
-	SmilesAtom(&SmilesAtom a) { *this = a; };
-	SmilesAtom(int _number) { *this = {}; number = _number; };
-}
+};
 
 
 

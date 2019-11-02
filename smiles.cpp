@@ -1,6 +1,12 @@
 #include <ctype.h>
+#include <string.h>
+#include <iostream>
+
+#include <vector>
+#include <unordered_map>
 
 
+#include "moly.hpp"
 #include "smiles.hpp"
 
 
@@ -14,8 +20,8 @@ int parseElement(char* s, int* count);
 
 
 
-SmilesAtom* parseAtom(char** s) {
-	SmilesAtom a;
+SmilesMeta* parseAtom(char** s) {
+	SmilesMeta a;
 	
 	while(**s) {
 		char c = **s;
@@ -27,14 +33,14 @@ SmilesAtom* parseAtom(char** s) {
 		if(c == ']') {
 			(*s)++; 
 			
-			return new SmilesAtom(a);
+			return new SmilesMeta(a);
 		}
 		
 		if(c == '+') {
 			a.charge++;
 			(*s)++;
 			
-			if(isnum(**s)) {
+			if(isdigit(**s)) {
 				char* end = NULL;
 				int n = strtol(*s, &end, 10);
 				a.charge += n - 1;
@@ -47,7 +53,7 @@ SmilesAtom* parseAtom(char** s) {
 			a.charge--;
 			(*s)++;
 			
-			if(isnum(**s)) {
+			if(isdigit(**s)) {
 				char* end = NULL;
 				int n = strtol(*s, &end, 10);
 				a.charge -= n + 1;
@@ -57,10 +63,10 @@ SmilesAtom* parseAtom(char** s) {
 			continue;
 		}
 		if(c == 'H') {
-			a.attachedHydrogen++;
+			a.attachedHydrogens++;
 			(*s)++;
 			
-			if(isnum(**s)) {
+			if(isdigit(**s)) {
 				char* end = NULL;
 				int n = strtol(*s, &end, 10);
 				a.attachedHydrogens += n - 1;
@@ -87,15 +93,16 @@ SmilesAtom* parseAtom(char** s) {
 	}
 	
 	
-	return new SmilesAtom(a);
+	return new SmilesMeta(a);
 }
 
 
 
 
 int parseElement(char* s, int* count) {
-	c = toupper(*s);
-	char c2 = *(*s+1);
+	char c = toupper(*s);
+	char c2 = *(s+1);
+	int number = 0;
 	
 	switch(c) {
 		case 'A':
@@ -317,6 +324,17 @@ int identifySimpleElement(char** s) {
 
 int parseSmiles(char* src) {
 	
+	Molecule* moly = new Molecule();
+	
+	unordered_map<int, Atom*> ringNumbers;
+	
+	Atom* root = NULL;
+	SmilesMeta* last = NULL;
+	
+	vector<Atom*> branchStack;
+	
+	vector<SmilesMeta*> metaData;
+	
 	char* s = src;
 	
 	while(*s) {
@@ -356,21 +374,57 @@ int parseSmiles(char* src) {
 		}
 		
 		if(c == '%') { // double-digit ring
+			char* e = NULL;
 			
-			continue;
-		}
-		if(isnum(c)) { // ring
+			int n = strtol(s+1, &e, 10);
+			
+			s = e;
+			
+			if(ringNumbers.count(n)) {
+				// close the ring
+			}
+			else {
+				ringNumbers[n] = last->atom;
+			}
 			
 			continue;
 		}
 		
+		if(isdigit(c)) { // ring
+			
+			int n = c - '0';
+			cout << n << endl;
+			
+			if(ringNumbers.count(n)) {
+				// close the ring
+			}
+			else {
+				ringNumbers[n] = last->atom;
+			}
+			
+			s++;
+			continue;
+		}
 		
+		
+		// long-form atom notation
 		if(c == '[') {
-			int num = 0;
-			SmilesAtom* a = parseElement(&s, &num);
+			int cnt = 0;
+			int anum = parseElement(s, &cnt);
+			Atom* a = new Atom(anum);
 			
+			cout << "got " << a << endl;
 			
+			if(root == NULL) root = a;
+			if(last != NULL) {
+// 				last->next = a;
+			}
+// 			last = a;
+			
+			s += cnt;
 		}
+		
+		// shorthand atom notation
 		if(isalpha(c)) {
 			int number = identifySimpleElement(&s);
 			if(!number) {
@@ -378,11 +432,18 @@ int parseSmiles(char* src) {
 				s++;
 			}
 			
-			SmilesAtom* a = new SmilesAtom(number);
+			Atom* a = new Atom(number);
+			cout << "got " << number << endl;
 			
-			if(islower) {
+			if(root == NULL) root = a;
+			if(last != NULL) {
+// 				last->next = a;
+			}
+// 			last = a;
+			
+			if(islower(c)) {
 				// aromatic bonding, seems to be implied in front of this atom
-				a->aromaticShorthand = true;
+				last->aromaticShorthand = true;
 			}
 		}
 		

@@ -3,12 +3,11 @@
 
 #include "csv.hpp"
 #include "moly.hpp"
+#include "smiles.hpp"
 
 using namespace std;
 
 
-
-Element g_Elements[114];
 
 
 
@@ -38,6 +37,8 @@ int main(int argc, char* argv[]) {
 		e->ElectronAffinity = strtof((*line)[9].c_str(), NULL);
 		
 	}
+	
+	parseSmiles("C1CC1"); 
 	
 	
 	return 0;
