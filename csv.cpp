@@ -1,41 +1,13 @@
-#include <stdio.h>
-#include <string.h>
-#include <string>
-#include <vector>
-#include <iostream>
 
-using namespace std;
 
-#include "moly.hpp"
+#include "csv.hpp"
 
 
 
-class CSVParser {
-public:
-	
-	char* source;
-	
-	void Load(string* path);
-	
-	void NextLine();
-	
-	vector<string>* header;
-	vector<vector<string>*> lines;
-	
-	
-protected:
-	char* cursor;
-	int currentLine;
-	int currentColumn;
-	
-	vector<string>* grabLine();
-	
-};
 
-
-void CSVParser::Load(string* path) {
+void CSVParser::Load(string path) {
 	// read the file
-	FILE* f = fopen(path->c_str(), "rb");
+	FILE* f = fopen(path.c_str(), "rb");
 	
 	fseek(f, 0, SEEK_END);
 	int sz = ftell(f);
@@ -115,23 +87,35 @@ vector<string>* CSVParser::grabLine() {
 	s = e;
 	s++; // BUG: may need better handling for \0 and \r
 	cursor = s;
-	
+/*	
 	for(string ss : *cols) {
 		cout << ss << endl;
-	} 
+	} */
 	
 	return cols;
 }
 
+CSVParser::CSVParser() {
+	header = NULL;
+}
 
+CSVParser::~CSVParser() {
+	if(header) delete header;
+	
+	for(vector<string>* line : lines) {
+		if(line) delete line;
+	}
+	
+}
+
+
+/*
 Element g_elements[120];
-
-
+*/
+/*
 void parse_chem_csv(string path) {
 	
-	CSVParser csv;
-	
-	csv.Load(&path);
+
 	
 	return;
 	
@@ -184,7 +168,7 @@ void parse_chem_csv(string path) {
 	
 	delete src;
 }
-
+*/
 
 
 
